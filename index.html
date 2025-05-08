@@ -5,20 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <!-- Google Search Console Verification -->
   <meta name="google-site-verification" content="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" />
-  <title>Image to PDF Converter</title>
+  <title>Image to PDF Converter - Free & Premium</title>
   <!-- Google AdSense Code -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX"
      crossorigin="anonymous"></script>
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  <!-- Add Sortable.js for drag-and-drop -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 </head>
 <body>
   <div class="container">
     <header>
-      <h1><i class="fas fa-file-pdf"></i> Image to PDF Converter</h1>
-      <p class="subtitle">Convert your images to PDF easily</p>
+      <div class="header-content">
+        <div class="logo-section">
+          <h1><i class="fas fa-file-pdf"></i> Image to PDF Converter</h1>
+          <p class="subtitle">Convert your images to PDF easily</p>
+        </div>
+        <div class="premium-badge">
+          <a href="#premium" class="premium-btn">
+            <i class="fas fa-crown"></i> Upgrade to Pro
+          </a>
+        </div>
+      </div>
       <nav class="main-nav">
         <a href="index.html" class="active"><i class="fas fa-home"></i> Home</a>
+        <a href="about.html"><i class="fas fa-info-circle"></i> About</a>
         <a href="faq.html"><i class="fas fa-question-circle"></i> FAQ</a>
         <a href="privacy-policy.html"><i class="fas fa-shield-alt"></i> Privacy</a>
         <a href="terms.html"><i class="fas fa-gavel"></i> Terms</a>
@@ -26,23 +38,83 @@
     </header>
 
     <main>
+      <div class="usage-limits">
+        <div class="free-tier">
+          <i class="fas fa-user"></i> Free Tier: <span id="remainingFiles">5</span> files remaining today
+        </div>
+        <div class="premium-features">
+          <a href="#premium" class="premium-link">
+            <i class="fas fa-crown"></i> Unlock unlimited conversions
+          </a>
+        </div>
+      </div>
+
       <div class="upload-area" id="dropZone">
         <i class="fas fa-cloud-upload-alt"></i>
         <p>Drag & Drop images here or</p>
         <label for="imageInput" class="upload-btn">Choose Files</label>
         <input type="file" id="imageInput" multiple accept="image/*" hidden />
+        <p class="file-info">Supported formats: JPG, PNG, GIF, WEBP (Max 10MB each)</p>
       </div>
 
       <div id="preview" class="preview-container"></div>
 
-      <button id="convertBtn" class="convert-btn" onclick="generatePDF()">
-        <i class="fas fa-file-pdf"></i> Convert to PDF
-      </button>
+      <div class="button-group">
+        <button id="convertBtn" class="convert-btn" onclick="generatePDF()">
+          <i class="fas fa-file-pdf"></i> Convert to PDF
+        </button>
+        <button id="downloadBtn" class="download-btn" onclick="downloadPDF()" style="display: none;">
+          <i class="fas fa-download"></i> Download PDF
+        </button>
+      </div>
+
+      <!-- Premium Features Modal -->
+      <div id="premiumModal" class="modal">
+        <div class="modal-content">
+          <span class="close">&times;</span>
+          <h2><i class="fas fa-crown"></i> Upgrade to Pro</h2>
+          <div class="premium-features-list">
+            <div class="feature">
+              <i class="fas fa-infinity"></i>
+              <span>Unlimited conversions</span>
+            </div>
+            <div class="feature">
+              <i class="fas fa-sort"></i>
+              <span>Drag & drop reordering</span>
+            </div>
+            <div class="feature">
+              <i class="fas fa-image"></i>
+              <span>Higher quality output</span>
+            </div>
+            <div class="feature">
+              <i class="fas fa-bolt"></i>
+              <span>Faster processing</span>
+            </div>
+          </div>
+          <div class="pricing">
+            <div class="price-option">
+              <h3>Monthly</h3>
+              <p class="price">$4.99</p>
+              <button class="upgrade-btn">Upgrade Now</button>
+            </div>
+            <div class="price-option featured">
+              <h3>Yearly</h3>
+              <p class="price">$39.99</p>
+              <p class="save">Save 33%</p>
+              <button class="upgrade-btn">Upgrade Now</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
   </div>
 
   <footer class="footer">
     <div class="footer-content">
+      <div class="footer-section">
+        <h3>About Us</h3>
+        <p>We provide the best image to PDF conversion service with premium features for professionals.</p>
+      </div>
       <div class="footer-section">
         <h3>Contact Us</h3>
         <p><i class="fas fa-envelope"></i> bidyuthembram930@gmail.com</p>
@@ -57,11 +129,384 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <p>&copy; 2024 Image to PDF Converter. All rights reserved.</p>
+      <p>&copy; 2025 Image to PDF Converter. All rights reserved.</p>
     </div>
   </footer>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="script.js"></script>
+  <script>
+    // Initialize jsPDF
+    window.jsPDF = window.jspdf.jsPDF;
+
+    // File upload handling
+    const dropZone = document.getElementById('dropZone');
+    const imageInput = document.getElementById('imageInput');
+    const previewContainer = document.getElementById('preview');
+    const convertBtn = document.getElementById('convertBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+
+    // State management
+    let remainingFiles = 5;
+    const remainingFilesElement = document.getElementById('remainingFiles');
+    let isProcessing = false;
+
+    // Utility functions
+    function cleanupResources(canvas, img) {
+      if (canvas) {
+        canvas.width = 1;
+        canvas.height = 1;
+        canvas = null;
+      }
+      if (img) {
+        img.src = '';
+        img = null;
+      }
+    }
+
+    function updateUIState() {
+      const hasImages = previewContainer.children.length > 0;
+      downloadBtn.style.display = hasImages ? 'inline-block' : 'none';
+      convertBtn.disabled = !hasImages || isProcessing;
+      if (!hasImages) {
+        window.generatedPDF = null;
+      }
+    }
+
+    function setLoading(isLoading) {
+      isProcessing = isLoading;
+      if (isLoading) {
+        convertBtn.classList.add('loading');
+        convertBtn.disabled = true;
+      } else {
+        convertBtn.classList.remove('loading');
+        convertBtn.disabled = false;
+      }
+    }
+
+    function validateFile(file) {
+      const maxFileSize = 10 * 1024 * 1024; // 10MB
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+
+      if (!file || file.size === 0) {
+        return { valid: false, error: 'Empty file' };
+      }
+      if (!allowedTypes.includes(file.type)) {
+        return { valid: false, error: 'Unsupported file type' };
+      }
+      if (file.size > maxFileSize) {
+        return { valid: false, error: 'File too large' };
+      }
+      return { valid: true };
+    }
+
+    // Handle drag and drop
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('drag-over');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('drag-over');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      const files = e.dataTransfer.files;
+      handleFiles(files);
+    });
+
+    // Handle file input
+    imageInput.addEventListener('change', (e) => {
+      handleFiles(e.target.files);
+    });
+
+    // Handle click on drop zone
+    dropZone.addEventListener('click', () => {
+      imageInput.click();
+    });
+
+    // Initialize Sortable for drag-and-drop reordering
+    new Sortable(document.getElementById('preview'), {
+      animation: 150,
+      ghostClass: 'sortable-ghost',
+      handle: '.preview-item',
+      onEnd: function() {
+        updateUIState();
+      }
+    });
+
+    // Premium modal functionality
+    const modal = document.getElementById('premiumModal');
+    const premiumLinks = document.querySelectorAll('.premium-link, .premium-btn');
+    const closeBtn = document.querySelector('.close');
+
+    premiumLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        modal.style.display = 'block';
+      });
+    });
+
+    closeBtn.addEventListener('click', () => {
+      modal.style.display = 'none';
+    });
+
+    window.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.style.display = 'none';
+      }
+    });
+
+    function updateRemainingFiles() {
+      remainingFiles--;
+      remainingFilesElement.textContent = remainingFiles;
+      if (remainingFiles <= 0) {
+        showToast('You\'ve reached your daily limit. Upgrade to Pro for unlimited conversions!', 'warning');
+        convertBtn.disabled = true;
+      }
+    }
+
+    async function handleFiles(files) {
+      if (remainingFiles <= 0) {
+        showToast('Please upgrade to Pro for unlimited conversions', 'warning');
+        return;
+      }
+
+      const loadingToast = document.createElement('div');
+      loadingToast.className = 'toast progress';
+      loadingToast.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing files...';
+      document.body.appendChild(loadingToast);
+      setTimeout(() => loadingToast.classList.add('show'), 100);
+
+      try {
+        const fileArray = Array.from(files);
+        let processedCount = 0;
+
+        for (const file of fileArray) {
+          const validation = validateFile(file);
+          if (!validation.valid) {
+            showToast(`${validation.error}: ${file.name}`, 'error');
+            continue;
+          }
+
+          const result = await processFile(file);
+          if (result.success) {
+            processedCount++;
+            updateRemainingFiles();
+          }
+          
+          loadingToast.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Processing file ${processedCount} of ${fileArray.length}...`;
+        }
+
+        updateUIState();
+      } catch (error) {
+        console.error('Error processing files:', error);
+        showToast('Error processing files. Please try again.', 'error');
+      } finally {
+        loadingToast.classList.remove('show');
+        setTimeout(() => loadingToast.remove(), 300);
+      }
+    }
+
+    async function processFile(file) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        let canvas = null;
+        let img = null;
+
+        reader.onload = (e) => {
+          img = new Image();
+          img.onload = () => {
+            try {
+              canvas = document.createElement('canvas');
+              let width = img.width;
+              let height = img.height;
+              
+              const maxDimension = 2000;
+              if (width > maxDimension || height > maxDimension) {
+                if (width > height) {
+                  height = Math.round((height * maxDimension) / width);
+                  width = maxDimension;
+                } else {
+                  width = Math.round((width * maxDimension) / height);
+                  height = maxDimension;
+                }
+              }
+              
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0, width, height);
+              
+              const previewImg = document.createElement('img');
+              previewImg.src = canvas.toDataURL('image/jpeg', 0.8);
+              
+              const wrapper = document.createElement('div');
+              wrapper.className = 'preview-item';
+              
+              const removeBtn = document.createElement('button');
+              removeBtn.className = 'remove-btn';
+              removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+              removeBtn.onclick = (event) => {
+                event.stopPropagation();
+                wrapper.remove();
+                updateUIState();
+              };
+              
+              wrapper.appendChild(previewImg);
+              wrapper.appendChild(removeBtn);
+              previewContainer.appendChild(wrapper);
+              
+              resolve({ success: true });
+            } catch (error) {
+              console.error('Error processing image:', error);
+              resolve({ success: false, error: 'Error processing image' });
+            } finally {
+              cleanupResources(canvas, img);
+            }
+          };
+
+          img.onerror = () => {
+            resolve({ success: false, error: 'Error loading image' });
+            cleanupResources(canvas, img);
+          };
+
+          img.src = e.target.result;
+        };
+
+        reader.onerror = () => {
+          resolve({ success: false, error: 'Error reading file' });
+        };
+
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function generatePDF() {
+      const images = previewContainer.getElementsByTagName('img');
+      
+      if (images.length === 0) {
+        showToast('Please upload at least one image first.', 'error');
+        return;
+      }
+
+      setLoading(true);
+      const progressToast = document.createElement('div');
+      progressToast.className = 'toast progress';
+      progressToast.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing images...';
+      document.body.appendChild(progressToast);
+      setTimeout(() => progressToast.classList.add('show'), 100);
+
+      try {
+        const pdf = new jsPDF();
+        let isFirstPage = true;
+        let processedImages = 0;
+
+        for (let i = 0; i < images.length; i++) {
+          const img = images[i];
+          const imgElement = new Image();
+          imgElement.crossOrigin = 'anonymous';
+
+          await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+              reject(new Error('Image loading timed out'));
+            }, 30000);
+
+            imgElement.onload = () => {
+              clearTimeout(timeout);
+              try {
+                if (!isFirstPage) {
+                  pdf.addPage();
+                }
+                isFirstPage = false;
+
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+                
+                const imgWidth = imgElement.width;
+                const imgHeight = imgElement.height;
+                const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+                
+                const imgX = (pdfWidth - imgWidth * ratio) / 2;
+                const imgY = (pdfHeight - imgHeight * ratio) / 2;
+
+                pdf.addImage(imgElement, 'JPEG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+                
+                processedImages++;
+                progressToast.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Processing image ${processedImages} of ${images.length}...`;
+                
+                resolve();
+              } catch (error) {
+                reject(error);
+              }
+            };
+
+            imgElement.onerror = () => {
+              clearTimeout(timeout);
+              reject(new Error('Error loading image'));
+            };
+
+            imgElement.src = img.src;
+          });
+        }
+
+        window.generatedPDF = pdf;
+        downloadBtn.style.display = 'inline-block';
+        showToast('PDF generated successfully! Click Download to save.', 'success');
+      } catch (error) {
+        console.error('Error generating PDF:', error);
+        showToast('Error generating PDF. Please try again.', 'error');
+      } finally {
+        setLoading(false);
+        progressToast.classList.remove('show');
+        setTimeout(() => progressToast.remove(), 300);
+      }
+    }
+
+    function downloadPDF() {
+      if (window.generatedPDF) {
+        try {
+          const now = new Date();
+          const dateStr = now.toISOString().split('T')[0];
+          const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
+          const filename = `converted_images_${dateStr}_${timeStr}.pdf`;
+          
+          window.generatedPDF.save(filename);
+          showToast('PDF downloaded successfully!', 'success');
+        } catch (error) {
+          console.error('Error downloading PDF:', error);
+          showToast('Error downloading PDF. Please try again.', 'error');
+        }
+      } else {
+        showToast('Please generate the PDF first.', 'error');
+      }
+    }
+
+    function showToast(message, type = 'success') {
+      const existingToasts = document.querySelectorAll('.toast');
+      existingToasts.forEach(toast => toast.remove());
+
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      
+      const icon = document.createElement('i');
+      icon.className = type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle';
+      icon.style.marginRight = '8px';
+      toast.insertBefore(icon, toast.firstChild);
+      
+      setTimeout(() => {
+        toast.classList.add('show');
+      }, 100);
+      
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+  </script>
 </body>
 </html>
+
